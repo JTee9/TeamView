@@ -1,8 +1,8 @@
 <div class="container mt-4">
-  <!-- Header with Update button -->
+  <!-- Header with League Selector and Update button -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1>Premier League</h1>
+      <h1><%= @selected_league %></h1>
       <% if @teams.any? && @teams.first.last_updated %>
         <small class="text-muted">
           Last updated: <%= time_ago_in_words(@teams.first.last_updated) %> ago
@@ -11,18 +11,33 @@
     </div>
     
     <div class="d-flex gap-2 align-items-center">
+      <!-- League Dropdown -->
+      <%= form_with url: teams_path, method: :get, local: true, class: "d-flex gap-2" do |f| %>
+        <%= f.select :league, 
+                     @available_leagues,
+                     { selected: @selected_league },
+                     { 
+                       class: "form-select form-select-sm",
+                       style: "width: auto;",
+                       onchange: "this.form.submit();"
+                     } %>
+      <% end %>
+      
       <% if user_signed_in? %>
-        <%= button_to "🔄 Update Now", 
-                      update_standings_teams_path,
+        <%= form_with url: update_standings_teams_path(league: @selected_league), 
                       method: :post,
+                      local: true,
+                      class: "d-flex gap-2 align-items-center" do |f| %>
+          <div class="form-check">
+            <%= f.check_box :fetch_squads, class: "form-check-input", id: "fetchSquads" %>
+            <%= f.label :fetch_squads, "Include squads", class: "form-check-label small", for: "fetchSquads" %>
+          </div>
+          <%= f.submit "🔄 Update #{@selected_league}", 
                       class: "btn btn-success btn-sm",
-                      form: { 
-                        style: "display: inline-block;",
-                        data: { 
-                          turbo_confirm: "This will use API requests. Continue?",
-                          turbo_method: :post
-                        }
+                      data: { 
+                        turbo_confirm: "This will fetch data for #{@selected_league}. Continue?"
                       } %>
+        <% end %>
         <%= button_to "Sign Out", destroy_user_session_path, 
                       method: :delete,
                       class: "btn btn-outline-secondary btn-sm",
@@ -56,7 +71,7 @@
             </thead>
             <tbody>
               <% @teams.each do |team| %>
-                <tr class="<%= standings_row_class(team.rank) %>">
+                <tr class="<%= standings_row_class(team.rank, @selected_league) %>">
                   <td class="text-center fw-bold"><%= team.rank %></td>
                   <td>
                     <%= link_to team_path(team), class: "text-decoration-none text-dark d-flex align-items-center" do %>
@@ -90,23 +105,36 @@
       </div>
     </div>
 
-    <!-- Legend -->
-    <div class="mt-3">
-      <small class="text-muted">
-        <span class="badge bg-primary me-2">UEFA Champions League</span>
-        <span class="badge bg-info text-dark me-2">UEFA Europa League</span>
-        <span class="badge bg-warning text-dark me-2">UEFA Conference League Qualifiers</span>
-        <span class="badge bg-danger">Relegation</span>
-      </small>
-    </div>
+    <!-- Legend (only show for top European leagues) -->
+    <% if ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'].include?(@selected_league) %>
+      <div class="mt-3">
+        <small class="text-muted">
+          <span class="badge bg-primary me-2">UEFA Champions League</span>
+          <span class="badge bg-info text-dark me-2">UEFA Europa League</span>
+          <span class="badge bg-warning text-dark me-2">UEFA Conference League</span>
+          <span class="badge bg-danger">Relegation</span>
+        </small>
+      </div>
+    <% end %>
+    
+    <!-- J-League specific legend -->
+    <% if ['J1 League', 'J2 League'].include?(@selected_league) %>
+      <div class="mt-3">
+        <small class="text-muted">
+          <span class="badge bg-primary me-2">AFC Champions League</span>
+          <span class="badge bg-info text-dark me-2">Promotion / Playoff</span>
+          <span class="badge bg-danger">Relegation</span>
+        </small>
+      </div>
+    <% end %>
 
   <% else %>
     <div class="alert alert-info">
-      <h4>No data yet!</h4>
-      <p>Run this command to fetch Premier League data:</p>
-      <code>rails football:update_standings</code>
+      <h4>No data for <%= @selected_league %> yet!</h4>
       <% if user_signed_in? %>
-        <p class="mt-3">Or click the "Update Now" button above.</p>
+        <p>Click the "Update <%= @selected_league %>" button above to fetch data.</p>
+      <% else %>
+        <p>Sign in to fetch league data.</p>
       <% end %>
     </div>
   <% end %>
@@ -124,6 +152,9 @@
   }
   .relegation {
     border-left: 4px solid #dc3545;
+  }
+  .promotion {
+    border-left: 4px solid #198754;
   }
   tr:hover {
     background-color: #f8f9fa;

@@ -1,8 +1,8 @@
 namespace :football do
-  desc "Update Premier League standings"
+  desc "Update League standings"
   task update_standings: :environment do
     puts "=" * 50
-    puts "UPDATING PREMIER LEAGUE STANDINGS"
+    puts "UPDATING LEAGUE STANDINGS"
     puts "=" * 50
 
     user = User.first || User.create!(
@@ -14,6 +14,9 @@ namespace :football do
 
     # Check API status first
     service.check_api_status
+
+    # Clear existing table data
+    service.update_standings(user, clear_existing: true) 
 
     # Update standings
     result = service.update_standings(user)

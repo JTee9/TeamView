@@ -2,10 +2,10 @@ class ApiFootballService
   include HTTParty
   base_uri 'https://v3.football.api-sports.io'
 
-  PREMIER_LEAGUE_ID = 39
-  CURRENT_SEASON= 2024
-
-  def initialize
+  def initialize(league_id: 39, season: 2024, league_name: 'Premier League')
+    @league_id = league_id
+    @season = season
+    @league_name = league_name
     @options = {
       headers: {
         'x-rapidapi-key' => ENV['API_FOOTBALL_KEY'],
@@ -15,60 +15,76 @@ class ApiFootballService
   end
 
   # Fetch and save league standings
-  def update_standings(user)
-    puts 'Fetching Premier League standings...'
-
-    response = self.class.get(
-      '/standings',
-      @options.merge(query: { league: PREMIER_LEAGUE_ID, season: CURRENT_SEASON })
-    )
-
-    unless response.success?
-      puts "❌ API Error: #{response.code} - #{response.message}"
-      return { success: false, error: response.message}
-    end
-
-    data = response.parsed_response
-
-    unless data['response']&.any?
-      puts "❌ No standings data found"
-      return { success: false, error: "No data returned from API."}
-    end
-
-    standings = data['response'][0]['league']['standings'][0]
-
-    standings.each do |team_data|
-      team = Team.find_or_initialize_by(
-        api_football_id: team_data['team']['id'].to_s
-      )
-
-      team.assign_attributes(
-        teamname: team_data['team']['name'],
-        logo_url: team_data['team']['logo'],
-        league: 'Premier League',
-        rank: team_data['rank'],
-        played: team_data['all']['played'],
-        wins: team_data['all']['win'],
-        draws: team_data['all']['draw'],
-        losses: team_data['all']['lose'],
-        goals_for: team_data['all']['goals']['for'],
-        goals_against: team_data['all']['goals']['against'],
-        goal_difference: team_data['goalsDiff'],
-        points: team_data['points'],
-        form: team_data['form'],
-        last_updated: Time.current,
-        user: user
-      )
-
-      if team.save
-        puts "✅ #{team.rank}. #{team.teamname} - #{team.points} pts"
-      else
-        puts "❌ Failed to save #{team_data['team']['name']}: #{team.errors.full_messages.join(', ')}"
-      end
-    end
-
-    { success: true, teams_count: standings.count }
+  def update_standings(user, clear_existing: false, fetch_squads: false)
+  puts "Fetching #{@league_name} standings for season #{@season}..."
+  
+  # Always clear existing teams for this league before updating
+  puts "Clearing existing teams for #{@league_name}..."
+  Team.where(league: @league_name).destroy_all
+  
+  response = self.class.get(
+    '/standings',
+    @options.merge(query: { league: @league_id, season: @season })
+  )
+  
+  unless response.success?
+    puts "❌ API Error: #{response.code} - #{response.message}"
+    return { success: false, error: response.message }
   end
+  
+  data = response.parsed_response
+  
+  unless data['response']&.any?
+    puts "❌ No standings data found"
+    return { success: false, error: "No data returned from API" }
+  end
+  
+  standings = data['response'][0]['league']['standings'][0]
+  teams_saved = []
+  
+  standings.each do |team_data|
+    team = Team.find_or_initialize_by(
+      api_football_id: team_data['team']['id'].to_s
+    )
+    
+    team.assign_attributes(
+      teamname: team_data['team']['name'],
+      logo_url: team_data['team']['logo'],
+      league: @league_name,
+      rank: team_data['rank'],
+      played: team_data['all']['played'],
+      wins: team_data['all']['win'],
+      draws: team_data['all']['draw'],
+      losses: team_data['all']['lose'],
+      goals_for: team_data['all']['goals']['for'],
+      goals_against: team_data['all']['goals']['against'],
+      goal_difference: team_data['goalsDiff'],
+      points: team_data['points'],
+      form: team_data['form'],
+      last_updated: Time.current,
+      user: user
+    )
+    
+    if team.save
+      teams_saved << team
+      puts "✅ #{team.rank}. #{team.teamname} - #{team.points} pts"
+    else
+      puts "❌ Failed to save #{team_data['team']['name']}: #{team.errors.full_messages.join(', ')}"
+    end
+  end
+  
+  # NEW: Optionally fetch squads after standings
+  if fetch_squads && teams_saved.any?
+    puts "\n👥 Fetching squads for all teams..."
+    teams_saved.each_with_index do |team, index|
+      puts "\n[#{index + 1}/#{teams_saved.count}] Updating #{team.teamname}..."
+      update_squad(team)
+      sleep 1  # Rate limiting
+    end
+  end
+  
+  { success: true, teams_count: standings.count }
+end
 
   # Fetch and save squad for a specific team
   def update_squad(team)
@@ -80,7 +96,7 @@ class ApiFootballService
     )
 
     unless response.success?
-      puts "❌ API Error: #{response.code}",
+      puts "❌ API Error: #{response.code}"
       return { success: false, error: response.message }
     end
 
@@ -96,11 +112,11 @@ class ApiFootballService
 
     players_data.each do |player_data|
       player = Player.find_or_initialize_by(
-        api_football_id: payer_data['id'].to_s,
+        api_football_id: player_data['id'].to_s,
         team: team
       )
 
-      players.assign_attributes(
+      player.assign_attributes(
         name: player_data['name'],
         position: player_data['position'],
         shirt_number: player_data['number'],
