@@ -1,0 +1,38 @@
+<div class="container mt-5">
+  <div>
+    <h1>Teams</h1>
+    <div>
+      <% if user_signed_in? %>
+        <%= link_to "Create a Team", new_team_path, class: "btn btn-primary" %>
+        <%= link_to "Sign Out", destroy_user_session_path, data: { turbo_method: :delete }, class: "btn btn-outline-secondary" %>
+      <% else %> 
+        <%= link_to "Sign In", new_user_session_path, class: "btn btn-outline-primary" %>
+        <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @teams.any? %>
+    <% @teams.each do |team| %>
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">
+            <%= link_to team.teamname, team_path(team) %>
+          </h5>
+          <h6 class="card-subtitle mb-2 text-muted"><%= team.division %></h6>
+          <p class="card-text">
+            <% if team.captain.present? %>
+              <%= team.captain %>
+            <% end %>
+          </p>
+          <p class="card-text"><%= truncate(team.motto, length: 200) %></p>
+          <small class="text-muted">Posted <%= time_ago_in_words(team.created_at) %> ago</small>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info">
+      No teams created yet. Be the first to create one!
+    </div>
+  <% end %>
+</div>

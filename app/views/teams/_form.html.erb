@@ -1,0 +1,38 @@
+<%= form_with(model: team, local: true) do |f| %>
+  <% if team.errors.any? %>
+    <div class="alert alert-danger">
+      <h4><%= pluralize(team.errors.count, "error") %> prevented this team from being saved:</h4>
+      <ul>
+        <% team.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :teamname, class: "form-label" %>
+    <%= f.text_field :teamname, class: "form-control", placeholder: "e.g. Arsenal" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :division, class: "form-label" %>
+    <%= f.text_field :division, class: "form-control", placeholder: "e.g. Premier League" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :captain, class: "form-label" %>
+    <%= f.text_field :captain, class: "form-control", placeholder: "e.g. Martin Odegaard" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :motto, class: "form-label" %>
+    <%= f.text_area :motto, rows: 8, class: "form-control", 
+                    placeholder: "What is the team motto?" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", teams_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

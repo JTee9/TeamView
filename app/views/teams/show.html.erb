@@ -1,0 +1,38 @@
+<div class="container mt-5">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="card-title"><%= @team.teamname %></h2>
+      <h4 class="card-subtitle mb-3 text-muted"><%= @team.division %></h4>
+
+      <p>
+        <% if @team.captain.present? %>
+          <span><% @team.captain %></span>
+        <% end %>
+      </p>
+
+      <hr>
+
+      <div class="mt-4">
+        <h5>Motto</h5>
+        <%= simple_format(@team.motto) %>
+      </div>
+
+      <hr>
+
+      <p class= "text-muted">
+        Created by <%= @team.user.email %> • <%= time_ago_in_words(@team.created_at) %> ago
+      </p>
+
+      <% if user_signed_in? && current_user == @team.user %>
+        <div>
+          <%= link_to "Edit", edit_team_path(@team), class: "btn btn-primary" %>
+          <%= link_to "Delete", team_path(@team),
+                      data: { turbo_method: :delete, turbo_confirm: "Are you sure?" },
+                      class: "btn btn-danger" %>
+        </div>
+      <% end %>
+
+      <%= link_to "← Back to all teams", teams_path, class: "btn btn-secondary" %>
+    </div>
+  </div>
+</div>
