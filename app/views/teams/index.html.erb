@@ -1,38 +1,131 @@
-<div class="container mt-5">
-  <div>
-    <h1>Teams</h1>
+<div class="container mt-4">
+  <!-- Header with Update button -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
+      <h1>Premier League</h1>
+      <% if @teams.any? && @teams.first.last_updated %>
+        <small class="text-muted">
+          Last updated: <%= time_ago_in_words(@teams.first.last_updated) %> ago
+        </small>
+      <% end %>
+    </div>
+    
+    <div class="d-flex gap-2 align-items-center">
       <% if user_signed_in? %>
-        <%= link_to "Create a Team", new_team_path, class: "btn btn-primary" %>
-        <%= link_to "Sign Out", destroy_user_session_path, data: { turbo_method: :delete }, class: "btn btn-outline-secondary" %>
-      <% else %> 
-        <%= link_to "Sign In", new_user_session_path, class: "btn btn-outline-primary" %>
-        <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-primary" %>
+        <%= button_to "🔄 Update Now", 
+                      update_standings_teams_path,
+                      method: :post,
+                      class: "btn btn-success btn-sm",
+                      form: { 
+                        style: "display: inline-block;",
+                        data: { 
+                          turbo_confirm: "This will use API requests. Continue?",
+                          turbo_method: :post
+                        }
+                      } %>
+        <%= button_to "Sign Out", destroy_user_session_path, 
+                      method: :delete,
+                      class: "btn btn-outline-secondary btn-sm",
+                      form: { style: "display: inline-block;" } %>
+      <% else %>
+        <%= link_to "Sign In", new_user_session_path, class: "btn btn-outline-primary btn-sm" %>
       <% end %>
     </div>
   </div>
 
   <% if @teams.any? %>
-    <% @teams.each do |team| %>
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="card-title">
-            <%= link_to team.teamname, team_path(team) %>
-          </h5>
-          <h6 class="card-subtitle mb-2 text-muted"><%= team.division %></h6>
-          <p class="card-text">
-            <% if team.captain.present? %>
-              <%= team.captain %>
-            <% end %>
-          </p>
-          <p class="card-text"><%= truncate(team.motto, length: 200) %></p>
-          <small class="text-muted">Posted <%= time_ago_in_words(team.created_at) %> ago</small>
+    <!-- League Table -->
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th class="text-center" style="width: 50px;">Pos</th>
+                <th>Club</th>
+                <th class="text-center d-none d-md-table-cell">Played</th>
+                <th class="text-center d-none d-md-table-cell">W</th>
+                <th class="text-center d-none d-md-table-cell">D</th>
+                <th class="text-center d-none d-md-table-cell">L</th>
+                <th class="text-center d-none d-lg-table-cell">GF</th>
+                <th class="text-center d-none d-lg-table-cell">GA</th>
+                <th class="text-center">GD</th>
+                <th class="text-center"><strong>Pts</strong></th>
+                <th class="text-center d-none d-md-table-cell">Form</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @teams.each do |team| %>
+                <tr class="<%= standings_row_class(team.rank) %>">
+                  <td class="text-center fw-bold"><%= team.rank %></td>
+                  <td>
+                    <%= link_to team_path(team), class: "text-decoration-none text-dark d-flex align-items-center" do %>
+                      <% if team.logo_url.present? %>
+                        <%= image_tag team.logo_url, 
+                                      alt: team.teamname, 
+                                      class: "me-2",
+                                      style: "height: 25px; width: 25px; object-fit: contain;" %>
+                      <% end %>
+                      <span class="fw-semibold"><%= team.teamname %></span>
+                    <% end %>
+                  </td>
+                  <td class="text-center d-none d-md-table-cell"><%= team.played %></td>
+                  <td class="text-center d-none d-md-table-cell"><%= team.wins %></td>
+                  <td class="text-center d-none d-md-table-cell"><%= team.draws %></td>
+                  <td class="text-center d-none d-md-table-cell"><%= team.losses %></td>
+                  <td class="text-center d-none d-lg-table-cell"><%= team.goals_for %></td>
+                  <td class="text-center d-none d-lg-table-cell"><%= team.goals_against %></td>
+                  <td class="text-center <%= team.goal_difference >= 0 ? 'text-success' : 'text-danger' %>">
+                    <%= team.goal_difference >= 0 ? '+' : '' %><%= team.goal_difference %>
+                  </td>
+                  <td class="text-center fw-bold"><%= team.points %></td>
+                  <td class="text-center d-none d-md-table-cell">
+                    <%= render_form(team.form) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
         </div>
       </div>
-    <% end %>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-3">
+      <small class="text-muted">
+        <span class="badge bg-primary me-2">UEFA Champions League</span>
+        <span class="badge bg-info text-dark me-2">UEFA Europa League</span>
+        <span class="badge bg-warning text-dark me-2">UEFA Conference League Qualifiers</span>
+        <span class="badge bg-danger">Relegation</span>
+      </small>
+    </div>
+
   <% else %>
     <div class="alert alert-info">
-      No teams created yet. Be the first to create one!
+      <h4>No data yet!</h4>
+      <p>Run this command to fetch Premier League data:</p>
+      <code>rails football:update_standings</code>
+      <% if user_signed_in? %>
+        <p class="mt-3">Or click the "Update Now" button above.</p>
+      <% end %>
     </div>
   <% end %>
 </div>
+
+<style>
+  .champions-league {
+    border-left: 4px solid #0d6efd;
+  }
+  .europa-league {
+    border-left: 4px solid #0dcaf0;
+  }
+  .conference-league {
+    border-left: 4px solid #ffc107;
+  }
+  .relegation {
+    border-left: 4px solid #dc3545;
+  }
+  tr:hover {
+    background-color: #f8f9fa;
+  }
+</style>

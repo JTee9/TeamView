@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  position: MyString
+  nationality: MyString
+  market_value: MyString
+  shirt_number: 1
+  age: 1
+  api_football_id: MyString
+  last_updated: 2026-02-27 14:56:57
+  team: one
+
+two:
+  name: MyString
+  position: MyString
+  nationality: MyString
+  market_value: MyString
+  shirt_number: 1
+  age: 1
+  api_football_id: MyString
+  last_updated: 2026-02-27 14:56:57
+  team: two

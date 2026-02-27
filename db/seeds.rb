@@ -1,5 +1,4 @@
 # Clear existing data
-Team.destroy_all
 User.destroy_all
 
 # Create test users
@@ -13,22 +12,5 @@ user2 = User.create!(
   password: "password123"
 )
 
-# Create sample teams
-Team.create!([
-  {
-    teamname: "TBFC",
-    division: "Division 4 Group D",
-    captain: "Jason Talbot",
-    motto: "Live Free or Die Hard",
-    user: user1
-  },
-  {
-    teamname: "INTENCITY",
-    division: "Division 4 Group D",
-    captain: "Takashi Yamada",
-    motto: "Just kick it up to 11",
-    user: user1
-  }
-])
-
-puts "✅ Created #{User.count} users and #{Team.count} teams!"
+puts "✅ Created user: #{user.email}"
+puts "Now run: rails football:update_standings"

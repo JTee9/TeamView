@@ -10,15 +10,41 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_25_063854) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_27_055657) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "players", force: :cascade do |t|
+    t.string "name"
+    t.string "position"
+    t.string "nationality"
+    t.string "market_value"
+    t.integer "shirt_number"
+    t.integer "age"
+    t.string "api_football_id"
+    t.datetime "last_updated"
+    t.bigint "team_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["team_id"], name: "index_players_on_team_id"
+  end
+
   create_table "teams", force: :cascade do |t|
     t.string "teamname"
-    t.string "division"
-    t.string "captain"
-    t.string "motto"
+    t.string "league"
+    t.string "logo_url"
+    t.string "api_football_id"
+    t.integer "rank"
+    t.integer "played"
+    t.integer "wins"
+    t.integer "draws"
+    t.integer "losses"
+    t.integer "goals_for"
+    t.integer "goals_against"
+    t.integer "goal_difference"
+    t.integer "points"
+    t.string "form"
+    t.datetime "last_updated"
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -37,5 +63,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_25_063854) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "players", "teams"
   add_foreign_key "teams", "users"
 end
