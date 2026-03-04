@@ -21,9 +21,10 @@
               <%= current_user.email %>
             </span>
             <%= link_to "Create Team", new_team_path, class: "btn btn-sm btn-primary me-2" %>
-            <%= link_to "Sign Out", destroy_user_session_path,
-                        data: { turbo_method: :delete },
-                        class: "btn btn-sm btn-outline-light" %>
+            <%= button_to "Sign Out", destroy_user_session_path, 
+              method: :delete,
+              class: "btn btn-sm btn-outline-light",
+              form: { style: "display: inline-block;" } %>
           <% else %>
             <%= link_to "Sign In", new_user_session_path, class: "btn btn-sm btn-outline-light me-2" %>
             <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-sm btn-primary" %>
