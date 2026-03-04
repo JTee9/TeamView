@@ -83,6 +83,4 @@ test:
 #
 production:
   <<: *default
-  database: teamview_production
-  username: teamview
-  password: <%= ENV["TEAMVIEW_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>
