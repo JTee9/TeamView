@@ -14,6 +14,10 @@ Rails.application.routes.draw do
     end
   end
 
+  # Custom routes for favorites using API football ID
+  post '/teams/:api_football_id/favorite', to: 'teams#favorite', as: 'favorite_team'
+  delete '/teams/:api_football_id/unfavorite', to: 'teams#unfavorite', as: 'unfavorite_team'
+
   # Defines the root path route ("/")
   # root "posts#index"
 end

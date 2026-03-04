@@ -48,6 +48,28 @@
     </div>
   </div>
 
+  <!-- Show user's favorite teams -->
+<% if user_signed_in? %>
+  <% user_favorite = current_user.favorite_for_league(@selected_league) %>
+  <% if user_favorite %>
+    <div class="alert alert-info d-flex align-items-center mb-4">
+      <% if user_favorite.team.logo_url.present? %>
+        <%= image_tag user_favorite.team.logo_url, 
+                      style: "height: 30px; width: 30px; object-fit: contain;",
+                      class: "me-2" %>
+      <% end %>
+      <div>
+        <strong>Your <%= @selected_league %> team:</strong> 
+        <%= link_to user_favorite.team.teamname, team_path(user_favorite.team), class: "alert-link" %>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-secondary mb-4">
+      <small>Click the 🤍 next to a team to show your support!</small>
+    </div>
+  <% end %>
+<% end %>
+
   <% if @teams.any? %>
     <!-- League Table -->
     <div class="card shadow-sm">
@@ -70,36 +92,77 @@
               </tr>
             </thead>
             <tbody>
-              <% @teams.each do |team| %>
-                <tr class="<%= standings_row_class(team.rank, @selected_league) %>">
-                  <td class="text-center fw-bold"><%= team.rank %></td>
-                  <td>
-                    <%= link_to team_path(team), class: "text-decoration-none text-dark d-flex align-items-center" do %>
-                      <% if team.logo_url.present? %>
-                        <%= image_tag team.logo_url, 
-                                      alt: team.teamname, 
-                                      class: "me-2",
-                                      style: "height: 25px; width: 25px; object-fit: contain;" %>
-                      <% end %>
-                      <span class="fw-semibold"><%= team.teamname %></span>
-                    <% end %>
-                  </td>
-                  <td class="text-center d-none d-md-table-cell"><%= team.played %></td>
-                  <td class="text-center d-none d-md-table-cell"><%= team.wins %></td>
-                  <td class="text-center d-none d-md-table-cell"><%= team.draws %></td>
-                  <td class="text-center d-none d-md-table-cell"><%= team.losses %></td>
-                  <td class="text-center d-none d-lg-table-cell"><%= team.goals_for %></td>
-                  <td class="text-center d-none d-lg-table-cell"><%= team.goals_against %></td>
-                  <td class="text-center <%= team.goal_difference >= 0 ? 'text-success' : 'text-danger' %>">
-                    <%= team.goal_difference >= 0 ? '+' : '' %><%= team.goal_difference %>
-                  </td>
-                  <td class="text-center fw-bold"><%= team.points %></td>
-                  <td class="text-center d-none d-md-table-cell">
-                    <%= render_form(team.form) %>
-                  </td>
-                </tr>
+  <% @teams.each do |team| %>
+    <% user_favorited = user_signed_in? && current_user.favorited?(team) %>
+    <tr class="<%= standings_row_class(team.rank, @selected_league) %>">
+      <td class="text-center fw-bold"><%= team.rank %></td>
+      <td>
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <%= link_to team_path(team), class: "text-decoration-none text-dark d-flex align-items-center" do %>
+              <% if team.logo_url.present? %>
+                <%= image_tag team.logo_url, 
+                              alt: team.teamname, 
+                              class: "me-2",
+                              style: "height: 25px; width: 25px; object-fit: contain;" %>
               <% end %>
-            </tbody>
+              <span class="fw-semibold"><%= team.teamname %></span>
+            <% end %>
+          </div>
+          
+          <!-- Heart Icon with Fan Count -->
+<div class="d-flex align-items-center gap-2 ms-3">
+  <% if user_signed_in? %>
+    <% if user_favorited %>
+      <%= button_to unfavorite_team_path(api_football_id: team.api_football_id), 
+                    method: :delete,
+                    class: "btn btn-link p-0 border-0",
+                    style: "text-decoration: none;",
+                    form: { style: "display: inline-block;" },
+                    title: "Unfavorite" do %>
+        <span style="color: #dc3545; font-size: 1.2rem;">❤️</span>
+      <% end %>
+    <% else %>
+      <%= button_to favorite_team_path(api_football_id: team.api_football_id), 
+                    method: :post,
+                    class: "btn btn-link p-0 border-0",
+                    style: "text-decoration: none;",
+                    form: { style: "display: inline-block;" },
+                    title: "Favorite this team" do %>
+        <span style="color: #ccc; font-size: 1.2rem;">🤍</span>
+      <% end %>
+    <% end %>
+  <% else %>
+    <span style="color: #ccc; font-size: 1.2rem;" title="Sign in to favorite">🤍</span>
+  <% end %>
+  
+  <% if team.fan_count > 0 %>
+    <small class="text-muted"><%= team.fan_count %></small>
+  <% end %>
+</div>
+            
+            <% if team.fan_count > 0 %>
+              <small class="text-muted"><%= team.fan_count %></small>
+            <% end %>
+          </div>
+        </div>
+      </td>
+      <td class="text-center d-none d-md-table-cell"><%= team.played %></td>
+      <td class="text-center d-none d-md-table-cell"><%= team.wins %></td>
+      <td class="text-center d-none d-md-table-cell"><%= team.draws %></td>
+      <td class="text-center d-none d-md-table-cell"><%= team.losses %></td>
+      <td class="text-center d-none d-lg-table-cell"><%= team.goals_for %></td>
+      <td class="text-center d-none d-lg-table-cell"><%= team.goals_against %></td>
+      <td class="text-center <%= team.goal_difference >= 0 ? 'text-success' : 'text-danger' %>">
+        <%= team.goal_difference >= 0 ? '+' : '' %><%= team.goal_difference %>
+      </td>
+      <td class="text-center fw-bold"><%= team.points %></td>
+      <td class="text-center d-none d-md-table-cell">
+        <%= render_form(team.form) %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>
           </table>
         </div>
       </div>

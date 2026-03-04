@@ -79,7 +79,7 @@ class ApiFootballService
     teams_saved.each_with_index do |team, index|
       puts "\n[#{index + 1}/#{teams_saved.count}] Updating #{team.teamname}..."
       update_squad(team)
-      sleep 1  # Rate limiting
+      sleep 3  # Rate limiting
     end
   end
   

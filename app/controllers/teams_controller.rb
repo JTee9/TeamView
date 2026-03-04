@@ -1,6 +1,7 @@
 class TeamsController < ApplicationController
   before_action :authenticate_user!, except: [:index, :show]
   before_action :set_team, only: [:show, :update_squad]
+  before_action :set_team_by_api_id, only: [:favorite, :unfavorite]
   
   # Available leagues
   LEAGUES = {
@@ -13,6 +14,29 @@ class TeamsController < ApplicationController
     'J2 League' => { id: 99, name: 'J2 League' },
     'J3 League' => { id: 100, name: 'J3 League' }
   }
+
+  # Add/remove favorite
+  def favorite
+  league = @team.league
+  
+  # Remove existing favorite for this league (if any)
+  current_user.favorites.where(league: league).destroy_all
+  
+  # Add new favorite using api_football_id
+  current_user.favorites.create(
+    api_football_id: @team.api_football_id,
+    league: league
+  )
+  
+  redirect_to teams_path(league: league), notice: "❤️ You're now a #{@team.teamname} fan!"
+end
+
+def unfavorite
+  league = @team.league
+  current_user.favorites.where(api_football_id: @team.api_football_id, league: league).destroy_all
+  
+  redirect_to teams_path(league: league), notice: "💔 Unfavorited #{@team.teamname}"
+end
 
   def index
     # Get selected league from params, default to Premier League
@@ -70,5 +94,11 @@ class TeamsController < ApplicationController
   
   def set_team
     @team = Team.find(params[:id])
+  end
+  
+  def set_team_by_api_id
+    @team = Team.find_by!(api_football_id: params[:api_football_id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to teams_path, alert: "Team not found"
   end
 end
