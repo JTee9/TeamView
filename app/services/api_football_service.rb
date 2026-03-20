@@ -152,17 +152,30 @@ end
 
   # Check API usage
   def check_api_status
-    response = self.class.get('/status', @options)
-
-    if response.success?
-      data = response.parsed_response['response']
-      puts "API Status:"
-      puts "Requests today: #{data['requests']['current']}/#{data['requests']['limit_day']}"
-      puts "Account: #{data['account']['firstname']} #{data['account']['lastname']}"
-      data
+  response = self.class.get('/status', @options)
+  
+  if response.success?
+    data = response.parsed_response
+    puts "📊 API Status:"
+    puts "  Raw response: #{data.inspect}"
+    
+    # The API might return data differently, let's handle both formats
+    if data['response'].is_a?(Hash)
+      account = data['response']['account'] || {}
+      requests = data['response']['requests'] || {}
+      
+      puts "  Account: #{account['firstname']} #{account['lastname']}" if account['firstname']
+      puts "  Requests today: #{requests['current']}/#{requests['limit_day']}" if requests['current']
     else
-      puts "❌ Could not fetch API status"
-      nil
+      puts "  Response format: #{data.class}"
+      puts data
     end
+    
+    data
+  else
+    puts "❌ Could not fetch API status: #{response.code}"
+    puts "Error: #{response.body}"
+    nil
   end
+end
 end
